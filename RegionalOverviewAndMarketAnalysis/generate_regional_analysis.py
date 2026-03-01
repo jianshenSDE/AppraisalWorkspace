@@ -24,7 +24,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 # ---------------------------------------------------------------------------
 SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(SCRIPT_DIR, "Examples", "RegionalOverviewAndMarketAnalysis", "DeepEastTexasRegional Overview and Market Area Analysis - Completed.docx")
-WDA_PDF_PATH  = os.path.join(os.path.dirname(SCRIPT_DIR), "WDA", "CorpusChristi.pdf")  # WDA stays in AppraisalWorkspace root
+WDA_PDF_PATH  = os.path.join(os.path.dirname(SCRIPT_DIR), "Sources", "WDA", "CorpusChristi.pdf")
 OUTPUT_DIR    = os.path.join(SCRIPT_DIR, "Output")
 OUTPUT_PATH   = os.path.join(OUTPUT_DIR, "CorpusChristiRegional Overview and Market Area Analysis.docx")
 

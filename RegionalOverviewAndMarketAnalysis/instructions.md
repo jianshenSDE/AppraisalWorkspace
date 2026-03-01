@@ -118,7 +118,7 @@ Sub-sections (all 14pt Bold Calibri run inside Normal paragraph, except noted):
 - Ensure `pymupdf` is installed: `pip install pymupdf`
 - Open `generate_regional_analysis.py` in `c:\AppraisalWorkspace\RegionalOverviewAndMarketAnalysis\`.
 - Update the following constants at the top of the script for the new area:
-  - `WDA_PDF_PATH` — path to the new area's TWC WDA/MSA Profile PDF (default location: `c:\AppraisalWorkspace\WDA\`)
+  - `WDA_PDF_PATH` — path to the new area's TWC WDA/MSA Profile PDF (default location: `c:\AppraisalWorkspace\Sources\WDA\`)
   - `OUTPUT_PATH` — desired output filename
   - All narrative content variables (MSA name, counties, stats, county description, etc.)
 - Run from the RegionalOverviewAndMarketAnalysis folder:
@@ -163,9 +163,10 @@ All pages of the WDA/MSA Profile PDF are automatically rendered as high-resoluti
 
 ```
 c:\AppraisalWorkspace\
-├── WDA/                              # Input WDA/MSA PDF files (shared across all report types)
-│   ├── CorpusChristi.pdf
-│   └── Deep East Texas WDA.pdf
+├── Sources/                          # All input source files
+│   └── WDA/                          # WDA/MSA PDF files from TWC
+│       ├── CorpusChristi.pdf
+│       └── Deep East Texas WDA.pdf
 └── RegionalOverviewAndMarketAnalysis/
     ├── instructions.md               # This file
     ├── generate_regional_analysis.py # Document generator script
@@ -183,8 +184,8 @@ c:\AppraisalWorkspace\
 | `instructions.md` | This file — reusable creation guide |
 | `generate_regional_analysis.py` | Python script to generate DOCX output |
 | `Examples/RegionalOverviewAndMarketAnalysis/...` | Format template / reference example |
-| `../WDA/CorpusChristi.pdf` | Source data for Corpus Christi MSA (embedded as images) |
-| `../WDA/Deep East Texas WDA.pdf` | Source data used in the example document |
+| `../Sources/WDA/CorpusChristi.pdf` | Source data for Corpus Christi MSA (embedded as images) |
+| `../Sources/WDA/Deep East Texas WDA.pdf` | Source data used in the example document |
 | `Output/...` | Generated Corpus Christi report |
 
 ## Dependencies
