@@ -7,9 +7,11 @@ FOLDER STRUCTURE
 c:\AppraisalWorkspace\
   Sources\
     MLS\              <-- Drop MLS PDF exports here (one per comparable sale)
+    CAD\              <-- Drop County Appraisal District PDFs here
     TexasFile\        <-- Drop TexasFile.com screenshots here (one per comparable)
     WDA\              <-- Drop TWC WDA/MSA Profile PDFs here (one per region)
-  LandComp\           <-- Land Comparable report generator
+  LandComp\           <-- Land Comparable report generator (vacant/unimproved land)
+  ImprovedComp\       <-- Improved Comparable report generator (buildings/commercial)
   RegionalOverviewAndMarketAnalysis\  <-- Regional Overview & Market Area report generator
 
 
@@ -65,7 +67,53 @@ No TexasFile (MLS only):
 
 
 ================================================================================
- REPORT TYPE 2: REGIONAL OVERVIEW AND MARKET AREA ANALYSIS
+ REPORT TYPE 2: IMPROVED COMPARABLE (ImprovedComp)
+================================================================================
+
+Use this for commercial properties that have buildings/improvements on them
+(restaurants, retail, office, warehouse, etc.).
+Use LandComp (above) for vacant/unimproved land sales.
+
+FILES YOU NEED TO PROVIDE
+--------------------------
+1. MLS PDF (required, one per comparable sale)
+   - Export from NTREIS, HAR, or other MLS system
+   - Save to: c:\AppraisalWorkspace\Sources\MLS\
+
+2. CAD PDF (strongly recommended, one per comparable)
+   - Download from the County Appraisal District website
+   - Provides: building SF, year built, land dimensions, county
+   - Save to: c:\AppraisalWorkspace\Sources\CAD\
+
+OUTPUTS GENERATED
+-----------------
+- ImprovedComp\Output\ImprovedComp_[Name].xlsx   (38-field spreadsheet)
+- ImprovedComp\Output\ImprovedComp_[Name].docx   (Word doc with table + photos)
+
+FIELDS LEFT BLANK (fill manually after generation)
+----------------------------------------------------
+- Rentable Unit Number / Average Unit Size / Unit Mix  -- for multi-unit buildings
+- Project Amenities / Unit Amenities                   -- from site inspection
+- Cap Rate / NOI                                       -- requires income/rent data
+- Recorded Number / Grantee                            -- if not in MLS sale history
+- Additional Comments                                  -- expand starter text
+
+SAMPLE PROMPTS
+--------------
+
+Single comparable (MLS + CAD):
+  "Generate an ImprovedComp report for Terrell using
+   Sources/MLS/808 E Moore Avenue, Terrell MLS.pdf
+   and Sources/CAD/808 E Moore Avenue, Terrell Kaufmann CAD.pdf"
+
+Multiple comparables:
+  "Generate an ImprovedComp report for DFW with 3 comparable sales.
+   MLS files: Sources/MLS/Prop1.pdf, Sources/MLS/Prop2.pdf, Sources/MLS/Prop3.pdf
+   CAD files: Sources/CAD/CAD1.pdf, Sources/CAD/CAD2.pdf, Sources/CAD/CAD3.pdf"
+
+
+================================================================================
+ REPORT TYPE 3: REGIONAL OVERVIEW AND MARKET AREA ANALYSIS
 ================================================================================
 
 FILES YOU NEED TO PROVIDE
