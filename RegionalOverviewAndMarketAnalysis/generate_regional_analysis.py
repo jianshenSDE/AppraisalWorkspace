@@ -3,10 +3,11 @@ Regional Overview and Market Area Analysis — Document Generator
 Generates a DOCX matching the exact formatting of the example template.
 
 Usage:
+    cd c:\\AppraisalWorkspace\\RegionalOverviewAndMarketAnalysis
     python generate_regional_analysis.py
 
 Output:
-    c:\AppraisalWorkspace\Output\CorpusChristiRegional Overview and Market Area Analysis.docx
+    Output\\CorpusChristiRegional Overview and Market Area Analysis.docx
 """
 
 import shutil
@@ -19,11 +20,12 @@ from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 # ---------------------------------------------------------------------------
-# PATHS
+# PATHS (relative to this script's directory)
 # ---------------------------------------------------------------------------
-TEMPLATE_PATH = r"c:\AppraisalWorkspace\Examples\RegionalOverviewAndMarketAnalysis\DeepEastTexasRegional Overview and Market Area Analysis - Completed.docx"
-WDA_PDF_PATH  = r"c:\AppraisalWorkspace\WDA\CorpusChristi.pdf"
-OUTPUT_DIR    = r"c:\AppraisalWorkspace\Output"
+SCRIPT_DIR    = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_PATH = os.path.join(SCRIPT_DIR, "Examples", "RegionalOverviewAndMarketAnalysis", "DeepEastTexasRegional Overview and Market Area Analysis - Completed.docx")
+WDA_PDF_PATH  = os.path.join(os.path.dirname(SCRIPT_DIR), "WDA", "CorpusChristi.pdf")  # WDA stays in AppraisalWorkspace root
+OUTPUT_DIR    = os.path.join(SCRIPT_DIR, "Output")
 OUTPUT_PATH   = os.path.join(OUTPUT_DIR, "CorpusChristiRegional Overview and Market Area Analysis.docx")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)

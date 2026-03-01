@@ -116,13 +116,17 @@ Sub-sections (all 14pt Bold Calibri run inside Normal paragraph, except noted):
 
 ### Step 4 — Run the Document Generator Script
 - Ensure `pymupdf` is installed: `pip install pymupdf`
-- Open `generate_regional_analysis.py` in `c:\AppraisalWorkspace\`.
+- Open `generate_regional_analysis.py` in `c:\AppraisalWorkspace\RegionalOverviewAndMarketAnalysis\`.
 - Update the following constants at the top of the script for the new area:
-  - `WDA_PDF_PATH` — path to the new area's TWC WDA/MSA Profile PDF
+  - `WDA_PDF_PATH` — path to the new area's TWC WDA/MSA Profile PDF (default location: `c:\AppraisalWorkspace\WDA\`)
   - `OUTPUT_PATH` — desired output filename
   - All narrative content variables (MSA name, counties, stats, county description, etc.)
-- Run: `python generate_regional_analysis.py`
-- Output will appear in `c:\AppraisalWorkspace\Output\`.
+- Run from the RegionalOverviewAndMarketAnalysis folder:
+  ```
+  cd c:\AppraisalWorkspace\RegionalOverviewAndMarketAnalysis
+  python generate_regional_analysis.py
+  ```
+- Output will appear in `c:\AppraisalWorkspace\RegionalOverviewAndMarketAnalysis\Output\`.
 
 **What the script does with the WDA PDF:**
 All pages of the WDA/MSA Profile PDF are automatically rendered as high-resolution images (150 DPI) and embedded directly into the Word document at 6.362" width, immediately after the source citation line. This mirrors the example document structure where the Deep East Texas WDA PDF pages are embedded as images before the analyst narrative begins. The script uses `PyMuPDF` (fitz) to render each PDF page to a temporary PNG, inserts it via `python-docx`, then deletes the temp files.
@@ -155,16 +159,33 @@ All pages of the WDA/MSA Profile PDF are automatically rendered as high-resoluti
 
 ---
 
+## Folder Structure
+
+```
+c:\AppraisalWorkspace\
+├── WDA/                              # Input WDA/MSA PDF files (shared across all report types)
+│   ├── CorpusChristi.pdf
+│   └── Deep East Texas WDA.pdf
+└── RegionalOverviewAndMarketAnalysis/
+    ├── instructions.md               # This file
+    ├── generate_regional_analysis.py # Document generator script
+    ├── Examples/
+    │   └── RegionalOverviewAndMarketAnalysis/
+    │       └── DeepEastTexasRegional Overview and Market Area Analysis - Completed.docx
+    └── Output/                        # Generated documents go here
+        └── CorpusChristiRegional Overview and Market Area Analysis.docx
+```
+
 ## Files Reference
 
 | File | Purpose |
 |---|---|
 | `instructions.md` | This file — reusable creation guide |
 | `generate_regional_analysis.py` | Python script to generate DOCX output |
-| `Examples/RegionalOverviewAndMarketAnalysis/DeepEastTexasRegional Overview and Market Area Analysis - Completed.docx` | Format template / reference example |
-| `WDA/CorpusChristi.pdf` | Source data for Corpus Christi MSA (also embedded as images) |
-| `WDA/Deep East Texas WDA.pdf` | Source data used in the example document |
-| `Output/CorpusChristiRegional Overview and Market Area Analysis.docx` | Generated Corpus Christi report |
+| `Examples/RegionalOverviewAndMarketAnalysis/...` | Format template / reference example |
+| `../WDA/CorpusChristi.pdf` | Source data for Corpus Christi MSA (embedded as images) |
+| `../WDA/Deep East Texas WDA.pdf` | Source data used in the example document |
+| `Output/...` | Generated Corpus Christi report |
 
 ## Dependencies
 
