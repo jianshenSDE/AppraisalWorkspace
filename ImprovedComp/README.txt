@@ -121,6 +121,32 @@ AFTER GENERATION — FILL IN THESE FIELDS MANUALLY
   +----------------------------+--------------------------------------------------+
 
 
+----------------------------------------------------------------
+  OPTION D — COLLIER APPRAISAL PDF (no MLS/CAD needed)
+----------------------------------------------------------------
+
+  For Collier International appraisal-format PDFs (structured comp pages
+  with Location Info, Sale Info, Physical Info, Operating Income, etc.):
+
+  python generate_collier_improved_comp.py
+
+  Or with CLI args:
+  python generate_collier_improved_comp.py --name "CStore" --pdf "Sources/Comps/collier.pdf"
+
+  This parser extracts: Name, Address, City, County, GBA, NRA, Year Built,
+  Transaction Price, Analysis Price, Cap Rate, NOI, Occupancy, Recording
+  Number, Buyer/Seller, Financing, Rights Transferred, and Remarks.
+
+  Fields left blank for analyst: Rentable Unit Number, Average Unit Size,
+  Unit Mix, Project/Unit Amenities, Finish-out %, Time on Market,
+  Original Listing Price, Sale-to-List Ratio.
+
+  PDF page images are rendered as compressed JPEG (200 DPI, quality 85)
+  and embedded in the Word doc at 6.5" width. The Word doc is built from
+  a blank Document() to avoid orphaned image blobs (see RetailMarketReport
+  README for details).
+
+
 FIELDS FILLED AUTOMATICALLY
 ----------------------------
   The following are extracted or calculated without any manual work:
