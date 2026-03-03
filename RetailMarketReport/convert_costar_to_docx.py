@@ -40,7 +40,7 @@ JPEG_QUALITY = 85
 # ---------------------------------------------------------------------------
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "example",
-                             "Austin MSA Retail Market Report.docx")
+                             "Example - Austin MSA Retail Market Report (1).docx")
 
 # Canonical section names in document order
 SECTION_ORDER = [
@@ -408,8 +408,8 @@ def _copy_styles_from_template(doc, template_path):
 
     # Collect the style elements we need from the template
     needed = {
-        'Style1-heading1', 'Style1-heading1Char',
-        'Style2-heading2', 'Style2-heading2Char',
+        'Heading1', 'Heading1Char',
+        'Heading2', 'Heading2Char',
         'NoSpacing',
     }
     for style_el in tmpl_styles_elem.findall(qn('w:style')):
@@ -480,13 +480,19 @@ def create_report(pdf_path, output_path, template_path=None):
     print(f"Date:         {costar_date} -> {formatted_date}")
     print(f"Sections:     {len(sections)}")
 
-    # --- Title ---
-    doc.add_paragraph(f"{msa_name} MSA Retail Market Report",
-                      style='Style 1 - heading 1')
+    # --- Title (Calibri 20pt Bold) ---
+    title_para = doc.add_paragraph(style='Heading 1')
+    title_run = title_para.add_run(f"{msa_name} MSA Retail Market Report")
+    title_run.font.name = 'Calibri'
+    title_run.font.size = Pt(20)
+    title_run.font.color.rgb = RGBColor(0, 0, 0)
+    title_run.bold = True
 
-    # --- Source line (italic) ---
+    # --- Source line (Calibri 11pt italic) ---
     source_para = doc.add_paragraph(style='No Spacing')
     source_run = source_para.add_run(f"Source: Costar as of {formatted_date}")
+    source_run.font.name = 'Calibri'
+    source_run.font.size = Pt(11)
     source_run.italic = True
 
     # --- Process each section ---
@@ -509,14 +515,20 @@ def create_report(pdf_path, output_path, template_path=None):
         print(f"  {sec_name:40s}  pages={len(page_indices)}  "
               f"narrative={len(narrative_pages)}  image={len(image_pages)}")
 
-        # --- Add section heading ---
+        # --- Add section heading (Calibri Bold) ---
         # In the example doc, most sections use Style2-heading2.
         # "Rent & Vacancy" and "Sale Trends" appear as plain Normal text in the example.
         if sec_name in ("Rent & Vacancy", "Sale Trends"):
-            p = doc.add_paragraph(display, style='Normal')
+            p = doc.add_paragraph(style='Normal')
+            heading_run = p.add_run(display)
+            heading_run.font.name = 'Calibri'
+            heading_run.bold = True
         else:
-            p = doc.add_paragraph(display)
-            p.style = doc.styles['Style2 - heading 2']
+            p = doc.add_paragraph(style='Heading 2')
+            heading_run = p.add_run(display)
+            heading_run.font.name = 'Calibri'
+            heading_run.font.color.rgb = RGBColor(0, 0, 0)
+            heading_run.bold = True
 
         # --- Metrics bar image (for narrative sections' first page) ---
         if has_narrative:
@@ -534,14 +546,18 @@ def create_report(pdf_path, output_path, template_path=None):
                                 width=Emu(IMAGE_WIDTH_EMU),
                                 height=Emu(target_h))
 
-        # --- Narrative text paragraphs ---
+        # --- Narrative text paragraphs (Calibri 10pt, Justified) ---
         if has_narrative:
             all_paragraphs = []
             for pg in narrative_pages:
                 paras = extract_narrative_paragraphs(pdf_doc, pg)
                 all_paragraphs.extend(paras)
             for para_text in all_paragraphs:
-                doc.add_paragraph(para_text, style='Normal')
+                p = doc.add_paragraph(style='Normal')
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                run = p.add_run(para_text)
+                run.font.name = 'Calibri'
+                run.font.size = Pt(10)
 
         # --- Image pages (charts, tables, etc.) ---
         # These are rendered in page order (they come after narrative pages
@@ -551,9 +567,28 @@ def create_report(pdf_path, output_path, template_path=None):
             img_data = render_page_as_image(pdf_doc, pg)
             add_image_paragraph(doc, img_data)
 
+    # --- Fallback: if no sections detected, render all content pages as images ---
+    if not sections:
+        print("  No standard sections detected — rendering all pages as images.")
+        for pg in range(len(pdf_doc)):
+            page = pdf_doc[pg]
+            text = page.get_text("text").strip()
+            # Skip blank/cover pages with very little text
+            if len(text) < 20:
+                print(f"    Page {pg}: skipped (blank/cover)")
+                continue
+            img_data = render_page_as_image(pdf_doc, pg)
+            add_image_paragraph(doc, img_data)
+            print(f"    Page {pg}: rendered as image")
+
     # --- Save ---
-    doc.save(output_path)
-    print(f"\nSaved: {output_path}")
+    try:
+        doc.save(output_path)
+        print(f"\nSaved: {output_path}")
+    except PermissionError:
+        alt = output_path.replace(".docx", " (new).docx")
+        doc.save(alt)
+        print(f"\nOriginal file locked. Saved to: {alt}")
     pdf_doc.close()
 
 
@@ -583,11 +618,18 @@ def main():
         output_path = os.path.abspath(args.output)
     else:
         pdf_name = Path(input_pdf).stem
+        # Standard CoStar MSA format: "Austin - TX USA-Retail-Market-..."
         match = re.match(r'^(.+?)\s*-\s*TX\s+USA', pdf_name)
-        msa = match.group(1).strip() if match else pdf_name
+        if match:
+            msa = match.group(1).strip()
+            out_name = f"{msa} MSA Retail Market Report.docx"
+        else:
+            # Non-standard (e.g. "United States - Single Tenant Net Lease...")
+            # Use cleaned PDF stem as the output name
+            out_name = f"{pdf_name}.docx"
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output")
         os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"{msa} MSA Retail Market Report.docx")
+        output_path = os.path.join(output_dir, out_name)
 
     create_report(input_pdf, output_path, args.template)
 

@@ -2,11 +2,17 @@
   Retail Market Report — CoStar PDF to Word Converter
 ================================================================================
 
+For comprehensive instructions (formatting rules, styling details, troubleshooting),
+see: instructions.md  (in this same folder)
+
 PURPOSE
 -------
 Converts a CoStar Retail Market Report PDF into a formatted Word document (.docx)
 that matches the Austin MSA example template exactly (fonts, headings, paragraph
 styles, image placement, margins, etc.).
+
+Also handles non-standard CoStar PDFs (e.g., Single Tenant Net Lease reports)
+by rendering all content pages as images.
 
 
 QUICK START
@@ -75,23 +81,32 @@ HOW IT WORKS
    from Document() and copy styles separately via _copy_styles_from_template().
 
 6. The styles copied from the template are:
-   - "Style 1 - heading 1" — Title (Calibri 20pt, bold, small caps)
-   - "No Spacing"          — Source line (italic)
-   - "Style2 - heading 2"  — Section headings (Calibri 12pt, bold)
-   - "Normal"              — Body paragraphs (Calibri 10pt, justified)
+   - "Heading 1"    — Title (Calibri 20pt Bold, black)
+   - "No Spacing"   — Source line (Calibri 11pt Italic)
+   - "Heading 2"    — Section headings (Calibri Bold, black)
+   - "Normal"       — Body paragraphs
 
-7. Page layout: 8.5" x 11", 1" margins all around.
+7. CRITICAL FORMATTING — all narrative body paragraphs must be:
+   - Font:      Calibri 10pt (explicitly set on every run)
+   - Alignment: JUSTIFY (WD_ALIGN_PARAGRAPH.JUSTIFY)
+   These are set explicitly in code, not inherited from styles, to ensure
+   they are always correct regardless of template style definitions.
+
+8. Page layout: 8.5" x 11", 1" margins all around.
+
+9. Non-standard PDFs (no section headers detected): all content pages are
+   rendered as images. Blank/cover pages (< 20 chars) are skipped.
 
 
 FILE STRUCTURE
 --------------
 RetailMarketReport/
   convert_costar_to_docx.py   — Main conversion script
-  README.txt                  — This file
+  instructions.md             — Comprehensive instructions (for AI + human)
+  README.txt                  — This file (quick-start guide)
   example/
-    Austin MSA Retail Market Report.docx         — Template (styles only; its
-                                                   images are NOT carried over)
-    Austin - TX USA-Retail-Market-2026-01-11.pdf  — Example source PDF
+    Example - Austin MSA Retail Market Report (1).docx  — Template (styles only)
+    Austin - TX USA-Retail-Market-2026-01-11.pdf        — Example source PDF
   output/
     <generated .docx files>
 
