@@ -22,11 +22,18 @@ import re
 import sys
 from pathlib import Path
 
+import copy
+
 import fitz  # PyMuPDF
 from docx import Document
-from docx.shared import Pt, Inches, Emu
+from docx.shared import Pt, Inches, Emu, Twips, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
+from lxml import etree
 from PIL import Image
+
+# JPEG quality for rendered page images (0-100).  85 is a good balance.
+JPEG_QUALITY = 85
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -280,12 +287,20 @@ def extract_narrative_paragraphs(pdf_doc, page_idx):
     return paragraphs
 
 
+def _pixmap_to_jpeg(pix):
+    """Convert a PyMuPDF Pixmap to compressed JPEG bytes via Pillow."""
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=JPEG_QUALITY, optimize=True)
+    return buf.getvalue()
+
+
 def render_metrics_bar(pdf_doc, page_idx, dpi=RENDER_DPI):
     """Render the metrics summary bar from the top of a section's first page.
 
     The CoStar pages have a metrics bar (big bold numbers + labels)
     roughly between y=55 and y=140 (in PDF points).
-    Returns PNG bytes, or None if no metrics bar detected.
+    Returns JPEG bytes, or None if no metrics bar detected.
     """
     page = pdf_doc[page_idx]
     page_dict = page.get_text("dict")
@@ -314,17 +329,17 @@ def render_metrics_bar(pdf_doc, page_idx, dpi=RENDER_DPI):
     clip = fitz.Rect(0, 55, page.rect.width, 140)
     mat = fitz.Matrix(zoom, zoom)
     pix = page.get_pixmap(matrix=mat, clip=clip, alpha=False)
-    return pix.tobytes("png")
+    return _pixmap_to_jpeg(pix)
 
 
 def render_page_as_image(pdf_doc, page_idx, dpi=RENDER_DPI):
-    """Render a PDF page as PNG bytes, cropping out the CoStar footer."""
+    """Render a PDF page as JPEG bytes, cropping out the CoStar footer."""
     page = pdf_doc[page_idx]
     zoom = dpi / 72.0
     mat = fitz.Matrix(zoom, zoom)
     clip = fitz.Rect(0, 0, page.rect.width, FOOTER_CROP_Y)
     pix = page.get_pixmap(matrix=mat, clip=clip, alpha=False)
-    return pix.tobytes("png")
+    return _pixmap_to_jpeg(pix)
 
 
 # ---------------------------------------------------------------------------
@@ -376,11 +391,63 @@ def add_image_paragraph(doc, img_data, center=True):
     # Calculate height to preserve aspect ratio
     img = Image.open(io.BytesIO(img_data))
     w, h = img.size
-    aspect = h / w
-    target_h = int(IMAGE_WIDTH_EMU * aspect)
+    target_h = int(IMAGE_WIDTH_EMU * (h / w))
 
     run = para.add_run()
     run.add_picture(io.BytesIO(img_data), width=Emu(IMAGE_WIDTH_EMU), height=Emu(target_h))
+
+
+def _copy_styles_from_template(doc, template_path):
+    """Copy custom style definitions from the template into a blank document.
+
+    This avoids loading the template directly (which drags in its images as
+    orphaned blobs) while still getting the exact same style XML.
+    """
+    tmpl = Document(template_path)
+    tmpl_styles_elem = tmpl.styles.element
+
+    # Collect the style elements we need from the template
+    needed = {
+        'Style1-heading1', 'Style1-heading1Char',
+        'Style2-heading2', 'Style2-heading2Char',
+        'NoSpacing',
+    }
+    for style_el in tmpl_styles_elem.findall(qn('w:style')):
+        style_id = style_el.get(qn('w:styleId'))
+        if style_id in needed:
+            # Deep-copy into the new doc's styles element
+            doc.styles.element.append(copy.deepcopy(style_el))
+
+    # Also copy the Normal style override and docDefaults from template
+    # so font/spacing defaults match exactly.
+    doc_defaults = tmpl_styles_elem.find(qn('w:docDefaults'))
+    if doc_defaults is not None:
+        old = doc.styles.element.find(qn('w:docDefaults'))
+        if old is not None:
+            doc.styles.element.replace(old, copy.deepcopy(doc_defaults))
+        else:
+            doc.styles.element.insert(0, copy.deepcopy(doc_defaults))
+
+    # Overwrite the Normal style with the template's version
+    for style_el in tmpl_styles_elem.findall(qn('w:style')):
+        style_id = style_el.get(qn('w:styleId'))
+        if style_id == 'Normal':
+            for existing in doc.styles.element.findall(qn('w:style')):
+                if existing.get(qn('w:styleId')) == 'Normal':
+                    doc.styles.element.replace(existing, copy.deepcopy(style_el))
+                    break
+            break
+
+    # Copy section properties (margins, page size) from template
+    tmpl_body = tmpl.element.body
+    tmpl_sectPr = tmpl_body.find(qn('w:sectPr'))
+    if tmpl_sectPr is not None:
+        body = doc.element.body
+        old_sectPr = body.find(qn('w:sectPr'))
+        if old_sectPr is not None:
+            body.replace(old_sectPr, copy.deepcopy(tmpl_sectPr))
+        else:
+            body.append(copy.deepcopy(tmpl_sectPr))
 
 
 def create_report(pdf_path, output_path, template_path=None):
@@ -398,14 +465,10 @@ def create_report(pdf_path, output_path, template_path=None):
     pdf_doc = fitz.open(pdf_path)
 
     print(f"Template:     {template_path}")
-    doc = Document(template_path)
-
-    # Clear all content from the template, keeping section properties (margins, etc.)
-    body = doc.element.body
-    for child in list(body):
-        tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
-        if tag != 'sectPr':
-            body.remove(child)
+    # Build a blank document and copy only styles/settings from the template.
+    # This avoids carrying over the template's image blobs as orphaned media.
+    doc = Document()
+    _copy_styles_from_template(doc, template_path)
 
     # Extract metadata
     msa_name = get_msa_name(pdf_doc)

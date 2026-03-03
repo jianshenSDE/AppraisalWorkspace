@@ -61,17 +61,23 @@ HOW IT WORKS
 3. For narrative pages: extracts the two-column text, reflows it into single-
    column paragraphs, and renders the metrics summary bar as an image.
 
-4. For image pages: renders the page as a high-resolution (200 DPI) PNG,
+4. For image pages: renders the page as a 200 DPI compressed JPEG (quality 85),
    cropping out the CoStar footer (date, copyright notice, page number)
    at the bottom, and embeds it in the Word document at 6.50" width.
 
-5. Applies the template's custom styles:
+5. Creates a BLANK Word document, then copies only the style definitions and
+   section properties (margins, page size) from the template via XML deep-copy.
+   This is critical — loading the template directly and clearing its paragraphs
+   would leave its original image blobs orphaned inside the docx package,
+   bloating the file (~40 MB) and causing Word to crash on copy/paste.
+
+6. Applies the template's custom styles:
    - "Style 1 - heading 1" — Title (Calibri 20pt, bold, small caps)
    - "No Spacing"          — Source line (italic)
    - "Style2 - heading 2"  — Section headings (Calibri 12pt, bold)
    - "Normal"              — Body paragraphs (Calibri 10pt, justified)
 
-6. Page layout: 8.5" x 11", 1" margins all around.
+7. Page layout: 8.5" x 11", 1" margins all around.
 
 
 FILE STRUCTURE
@@ -80,7 +86,8 @@ RetailMarketReport/
   convert_costar_to_docx.py   — Main conversion script
   README.txt                  — This file
   example/
-    Austin MSA Retail Market Report.docx         — Template Word document
+    Austin MSA Retail Market Report.docx         — Template (styles only; its
+                                                   images are NOT carried over)
     Austin - TX USA-Retail-Market-2026-01-11.pdf  — Example source PDF
   output/
     <generated .docx files>
@@ -91,6 +98,11 @@ NOTES
 - The script auto-detects the MSA name and report date from the PDF.
 - CoStar PDFs with more/fewer narrative pages are handled automatically;
   sections with no narrative text will be entirely image-based.
+- Output files are typically 6-10 MB (JPEG images, no orphaned media).
+- The template .docx is used ONLY as a style source. It is never used as
+  the base document for output — this prevents orphaned image blobs.
 - If CoStar changes their PDF layout significantly, the font-based page
   classifier (classify_page_by_font) or section header detection may need
   updating.
+- The CoStar footer is cropped at y=738 of the 792pt page (constant
+  FOOTER_CROP_Y in the script). Adjust if CoStar changes footer position.
