@@ -131,6 +131,9 @@ Sub-sections (all 14pt Bold Calibri run inside Normal paragraph, except noted):
 **What the script does with the WDA PDF:**
 All pages of the WDA/MSA Profile PDF are automatically rendered as high-resolution images (150 DPI) and embedded directly into the Word document at 6.362" width, immediately after the source citation line. This mirrors the example document structure where the Deep East Texas WDA PDF pages are embedded as images before the analyst narrative begins. The script uses `PyMuPDF` (fitz) to render each PDF page to a temporary PNG, inserts it via `python-docx`, then deletes the temp files.
 
+**IMPORTANT — Template handling:**
+The script creates a new empty Word document via `Document()` and copies ONLY the style definitions and section properties (margins, page size) from the template using `_copy_styles_from_template()`. Do NOT change this to `Document(TEMPLATE_PATH)` or `shutil.copy()` followed by clearing paragraphs — that would embed the template's images as invisible orphaned blobs inside the output docx, bloating the file and causing Word to crash on copy/paste.
+
 ### Step 5 — Insert Maps
 - Open the generated DOCX.
 - Search for `<TODO: Insert Map>` (there are 2 instances).

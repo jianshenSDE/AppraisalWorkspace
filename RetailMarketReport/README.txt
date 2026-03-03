@@ -65,13 +65,16 @@ HOW IT WORKS
    cropping out the CoStar footer (date, copyright notice, page number)
    at the bottom, and embeds it in the Word document at 6.50" width.
 
-5. Creates a BLANK Word document, then copies only the style definitions and
-   section properties (margins, page size) from the template via XML deep-copy.
-   This is critical — loading the template directly and clearing its paragraphs
-   would leave its original image blobs orphaned inside the docx package,
-   bloating the file (~40 MB) and causing Word to crash on copy/paste.
+5. Creates a new empty Word document from scratch, then reads the template
+   .docx (the Austin example) and copies ONLY its style/formatting definitions
+   (fonts, heading sizes, spacing, margins, page size) into the new doc.
+   The template's actual content and images are never carried over.
+   NOTE: Do NOT use Document(template_path) as the base document — that
+   would embed the template's 33 images as invisible orphaned blobs (~20 MB),
+   bloating the file and causing Word to crash on copy/paste. Always start
+   from Document() and copy styles separately via _copy_styles_from_template().
 
-6. Applies the template's custom styles:
+6. The styles copied from the template are:
    - "Style 1 - heading 1" — Title (Calibri 20pt, bold, small caps)
    - "No Spacing"          — Source line (italic)
    - "Style2 - heading 2"  — Section headings (Calibri 12pt, bold)

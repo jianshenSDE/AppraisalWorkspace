@@ -10,7 +10,7 @@ Output:
     Output\\CorpusChristiRegional Overview and Market Area Analysis.docx
 """
 
-import shutil
+import copy
 import os
 import tempfile
 import fitz  # PyMuPDF
@@ -18,6 +18,7 @@ from docx import Document
 from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from lxml import etree
 
 # ---------------------------------------------------------------------------
 # PATHS (relative to this script's directory)
@@ -31,16 +32,57 @@ OUTPUT_PATH   = os.path.join(OUTPUT_DIR, "CorpusChristiRegional Overview and Mar
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ---------------------------------------------------------------------------
-# Copy template → output (preserves all custom styles exactly)
+# Build a BLANK document and copy only style definitions + section properties
+# from the template.  Do NOT use Document(TEMPLATE_PATH) or shutil.copy()
+# as the base — that would embed the template's images as orphaned blobs
+# inside the docx, bloating the file and causing Word to crash on copy/paste.
 # ---------------------------------------------------------------------------
-shutil.copy(TEMPLATE_PATH, OUTPUT_PATH)
-doc = Document(OUTPUT_PATH)
+def _copy_styles_from_template(doc, template_path):
+    """Copy custom style definitions from the template into a blank document."""
+    tmpl = Document(template_path)
+    tmpl_styles_elem = tmpl.styles.element
 
-# Remove every body element except section properties
-body = doc.element.body
-for child in list(body):
-    if child.tag != qn('w:sectPr'):
-        body.remove(child)
+    # Custom styles needed from this template
+    needed = {
+        'Style1-heading1', 'Style1-heading1Char',
+        'Style2-heading2', 'Style2-heading2Char',
+        'ListParagraph',
+    }
+    for style_el in tmpl_styles_elem.findall(qn('w:style')):
+        style_id = style_el.get(qn('w:styleId'))
+        if style_id in needed:
+            doc.styles.element.append(copy.deepcopy(style_el))
+
+    # Copy docDefaults (font/spacing defaults)
+    doc_defaults = tmpl_styles_elem.find(qn('w:docDefaults'))
+    if doc_defaults is not None:
+        old = doc.styles.element.find(qn('w:docDefaults'))
+        if old is not None:
+            doc.styles.element.replace(old, copy.deepcopy(doc_defaults))
+        else:
+            doc.styles.element.insert(0, copy.deepcopy(doc_defaults))
+
+    # Overwrite the Normal style with the template's version
+    for style_el in tmpl_styles_elem.findall(qn('w:style')):
+        if style_el.get(qn('w:styleId')) == 'Normal':
+            for existing in doc.styles.element.findall(qn('w:style')):
+                if existing.get(qn('w:styleId')) == 'Normal':
+                    doc.styles.element.replace(existing, copy.deepcopy(style_el))
+                    break
+            break
+
+    # Copy section properties (margins, page size)
+    tmpl_sectPr = tmpl.element.body.find(qn('w:sectPr'))
+    if tmpl_sectPr is not None:
+        body = doc.element.body
+        old_sectPr = body.find(qn('w:sectPr'))
+        if old_sectPr is not None:
+            body.replace(old_sectPr, copy.deepcopy(tmpl_sectPr))
+        else:
+            body.append(copy.deepcopy(tmpl_sectPr))
+
+doc = Document()
+_copy_styles_from_template(doc, TEMPLATE_PATH)
 
 # ---------------------------------------------------------------------------
 # HELPERS
@@ -600,5 +642,10 @@ add_normal(doc,
 # ---------------------------------------------------------------------------
 # Save
 # ---------------------------------------------------------------------------
-doc.save(OUTPUT_PATH)
-print(f"Document saved to:\n  {OUTPUT_PATH}")
+try:
+    doc.save(OUTPUT_PATH)
+    print(f"Document saved to:\n  {OUTPUT_PATH}")
+except PermissionError:
+    alt = OUTPUT_PATH.replace(".docx", " (new).docx")
+    doc.save(alt)
+    print(f"Original file locked (open in Word?). Saved to:\n  {alt}")
