@@ -1,0 +1,32 @@
+# Output directories (LLM-generated files - do not commit)
+ImprovedComp/Output/
+LandComp/Output/
+LeaseComps/Output/
+RegionalOverviewAndMarketAnalysis/Output/
+RetailMarketReport/output/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*_debug*.py
+*_verify*.py
